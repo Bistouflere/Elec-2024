@@ -1,88 +1,101 @@
 from machine import Pin
 import time
 import network
-from microWebSrv2 import MicroWebSrv2
+import socket
 
-# Configuration des pins pour les sorties vers le décodeur 74LS47
-data_pins = [Pin(17, Pin.OUT),Pin(18, Pin.OUT),Pin(19, Pin.OUT),Pin(16, Pin.OUT)]
+# Définition des broches pour le décodeur BCD
+A = Pin(17, Pin.OUT)
+B = Pin(18, Pin.OUT)
+C = Pin(19, Pin.OUT)
+D = Pin(16, Pin.OUT)
 
 # Définition du sensor
 pir = Pin(0, Pin.IN)
 
 # Définition de la led
 led = Pin(15, Pin.OUT)
-
 led_red = Pin(13, Pin.OUT)
 led_green = Pin(14, Pin.OUT)
 led_blue = Pin(15, Pin.OUT)
 
-# Configuration des pins pour la sélection des afficheurs 7 segments
-segment_pins = [Pin(22, Pin.OUT), Pin(21, Pin.OUT), Pin(20, Pin.OUT)]
+# Définition des 7 segments
+sept_seg = [Pin(22, Pin.OUT), Pin(21, Pin.OUT), Pin(20, Pin.OUT)]
 
-
-# Tableau des valeurs binaires correspondant aux chiffres 0-9
-digit_to_binary = [
-    [0, 0, 0, 0],  # 0
-    [0, 0, 0, 1],  # 1
-    [0, 0, 1, 0],  # 2
-    [0, 0, 1, 1],  # 3
-    [0, 1, 0, 0],  # 4
-    [0, 1, 0, 1],  # 5
-    [0, 1, 1, 0],  # 6
-    [0, 1, 1, 1],  # 7
-    [1, 0, 0, 0],  # 8
-    [1, 0, 0, 1]   # 9
+# Tableau de correspondance pour les chiffres de 0 à 9 sur le décodeur BCD
+decodeur_mapping = [
+    (0, 0, 0, 0),  # 0
+    (0, 0, 0, 1),  # 1
+    (0, 0, 1, 0),  # 2
+    (0, 0, 1, 1),  # 3
+    (0, 1, 0, 0),  # 4
+    (0, 1, 0, 1),  # 5
+    (0, 1, 1, 0),  # 6
+    (0, 1, 1, 1),  # 7
+    (1, 0, 0, 0),  # 8
+    (1, 0, 0, 1)   # 9
 ]
 
-def _httpHandlerLedRGBGet(httpClient, httpResponse):
-    content = """<!DOCTYPE html>
-<html>
-<head>
-    <title>Contrôle de la LED RGB</title>
-</head>
-<body>
-    <h1>Contrôle de la LED RGB</h1>
-    <button onclick="changeColor('red')">Rouge</button>
-    <button onclick="changeColor('green')">Vert</button>
-    <button onclick="changeColor('blue')">Bleu</button>
-    <script>
-        function changeColor(color) {
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", "/led?color=" + color, true);
-            xhr.send();
-        }
-    </script>
-</body>
-</html>"""
-    httpResponse.WriteResponseOk( headers = None,
-        contentType = "text/html",
-        contentCharset = "UTF-8",
-        content = content )
 
-def _httpHandlerLedRGBPost(httpClient, httpResponse):
-    qs = httpClient.GetRequestQueryParams()
-    color = qs["color"]
-    if color == "red":
-        led_red.on()
-        led_green.off()
-        led_blue.off()
-    elif color == "green":
-        led_red.off()
-        led_green.on()
-        led_blue.off()
-    elif color == "blue":
-        led_red.off()
-        led_green.off()
-        led_blue.on()
-    httpResponse.WriteResponseOk()
+import network
+import socket
+from machine import Pin
 
-routeHandlers = [
-    ( "/led", "GET",  _httpHandlerLedRGBGet ),
-    ( "/led", "POST", _httpHandlerLedRGBPost )
-]
+# Configuration des broches pour les LEDs RGB
+led_red = Pin(14, Pin.OUT)
+led_green = Pin(13, Pin.OUT)
+led_blue = Pin(12, Pin.OUT)
 
-srv = MicroWebSrv2(routeHandlers=routeHandlers)
-srv.Start()
+# Fonction pour configurer et démarrer le serveur web
+def start_web_server():
+    # Création d'un socket TCP/IP
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    # Lier le socket à l'adresse et au port souhaités
+    server_address = ('', 80)  # Laisser l'adresse vide pour accepter les connexions entrantes sur toutes les interfaces
+    server_socket.bind(server_address)
+
+    # Ecouter les connexions entrantes
+    server_socket.listen(1)
+    print("Serveur web démarré. En attente de connexions...")
+
+    while True:
+        # Attendre une connexion entrante
+        client_connection, client_address = server_socket.accept()
+        print("Connexion depuis:", client_address)
+
+        # Recevoir les données de la requête HTTP
+        request_data = client_connection.recv(1024).decode()
+
+        # Extraire la méthode HTTP et l'URI de la requête
+        request_method = request_data.split(' ')[0]
+        request_uri = request_data.split(' ')[1]
+
+        # Traiter la requête
+        if request_method == 'GET':
+            if request_uri == '/red':
+                led_red.on()
+                led_green.off()
+                led_blue.off()
+            elif request_uri == '/green':
+                led_red.off()
+                led_green.on()
+                led_blue.off()
+            elif request_uri == '/blue':
+                led_red.off()
+                led_green.off()
+                led_blue.on()
+
+            # Envoyer une réponse HTTP
+            response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nAction effectuée."
+            client_connection.send(response.encode())
+        else:
+            # Envoyer une réponse HTTP pour les méthodes autres que GET
+            response = "HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/plain\r\n\r\nMéthode non autorisée."
+            client_connection.send(response.encode())
+
+        # Fermer la connexion client
+        client_connection.close()
 
 # Connexion au WiFi
 def connecterWifi(ssid, password):
@@ -95,47 +108,24 @@ def connecterWifi(ssid, password):
             pass
     print('Connecté au réseau WiFi:', wlan.ifconfig())
 
-connecterWifi("AndroidAPDA52", "qoyl0884")
+# Démarrer le serveur web et connecter au WiFi
+connecterWifi("votre_ssid", "votre_mot_de_passe")
+start_web_server()
 
+# Fonction pour afficher un chiffre sur l'afficheur à sept segments
+def afficher_chiffre(chiffre):
+    # Vérifier si le chiffre est valide (0 à 9)
+    if 0 <= chiffre <= 9:
+        # Récupérer les valeurs du tableau de correspondance pour le chiffre donné
+        a, b, c, d = decodeur_mapping[chiffre]
+        # Appliquer ces valeurs aux broches du décodeur BCD
+        A.value(a)
+        B.value(b)
+        C.value(c)
+        D.value(d)
+    else:
+        print("Chiffre invalide")
 
-
-def display_digit(digit):
-    """Affiche un chiffre sur le décodeur 74LS47."""
-    binary_value = digit_to_binary[digit]
-    for pin, value in zip(data_pins, binary_value):
-        pin.value(value)
-
-def select_segment(segment_index):
-    """Active un afficheur 7 segments en fonction de l'index donné."""
-    for i, pin in enumerate(segment_pins):
-        if i == segment_index:
-            pin.value(1)
-        else:
-            pin.value(0)
-
-def display_time(minutes, seconds):
-    """Affiche le temps restant en minutes et secondes."""
-   
-    min_units = minutes % 10
-    sec_tens = seconds // 10
-    sec_units = seconds % 10
-    
-    digits = [ min_units, sec_tens, sec_units]
-    for i in range(3):  # Nous avons 3 afficheurs 7 segments
-        select_segment(i)
-        display_digit(digits[i])
-        time.sleep(0.001)  # Temps pour stabiliser l'affichage
-        select_segment(-1)  # Désactive tous les afficheurs avant de passer au suivant
-
-def countdown(minutes):
-    """Démarre le décompteur pour les minutes spécifiées."""
-    total_seconds = minutes * 60
-    while total_seconds >= 0:
-        mins = total_seconds // 60
-        secs = total_seconds % 60
-        for _ in range(200):  # Afficher les segments pendant 1 seconde (200 * 5ms)
-            display_time(mins, secs)
-        total_seconds -= 1
 
 # Boucle principale pour afficher des chiffres de 0 à 9 en boucle
 while True:
@@ -144,6 +134,11 @@ while True:
     # Si un mouvement est détecté, imprimer un message
     if motion_detected:
         led.toggle()
-        countdown(3)
+        for x in range(3):
+            sept_seg[x].value(1)
+            for chiffre in range(10):
+                afficher_chiffre(chiffre)
+                time.sleep(1)  # Délai d'une seconde entre chaque chiffre affiché
+            sept_seg[x].value(0)
         led.value(0)
         time.sleep(1)
