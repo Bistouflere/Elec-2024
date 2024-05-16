@@ -47,7 +47,7 @@ def display_time(minutes, seconds):
     for i in range(3):  # Nous avons 3 afficheurs 7 segments
         select_segment(i)
         display_digit(digits[i])
-        time.sleep(0.00)  # Temps pour stabiliser l'affichage
+        time.sleep(0.001)  # Temps pour stabiliser l'affichage
         select_segment(-1)  # Désactive tous les afficheurs avant de passer au suivant
 
 def countdown(minutes):
