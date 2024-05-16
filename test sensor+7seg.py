@@ -11,7 +11,10 @@ D = Pin(16, Pin.OUT)
 pir = Pin(0, Pin.IN)
 
 # Définition de la led
-led = Pin(15, Pin.OUT)
+ledRouge = Pin(13, Pin.OUT) #rouge
+ledBleu = Pin(14, Pin.OUT) #bleu
+ledVert = Pin(15, Pin.OUT) #vert
+
 
 # Définition des 7 segments
 sept_seg = [Pin(22, Pin.OUT), Pin(21, Pin.OUT), Pin(20, Pin.OUT)]
