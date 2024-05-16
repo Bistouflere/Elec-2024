@@ -1,44 +1,54 @@
 from machine import Pin
 import time
 
-# Définition des broches pour le décodeur BCD
-A = Pin(17, Pin.OUT)
-B = Pin(18, Pin.OUT)
-C = Pin(19, Pin.OUT)
-D = Pin(16, Pin.OUT)
-
 # Définition des broches pour les afficheurs à 7 segments
-sept_seg = [Pin(22, Pin.OUT), Pin(21, Pin.OUT), Pin(20, Pin.OUT)]
-
-# Tableau de correspondance des chiffres en BCD pour les décodeurs
-BCD_mapping = [
-    [0, 0, 0, 0],   # 0
-    [1, 0, 0, 0],   # 1
-    [0, 1, 0, 0],   # 2
-    [1, 1, 0, 0],   # 3
-    [0, 0, 1, 0],   # 4
-    [1, 0, 1, 0],   # 5
-    [0, 1, 1, 0],   # 6
-    [1, 1, 1, 0],   # 7
-    [0, 0, 0, 1],   # 8
-    [1, 0, 0, 1]    # 9
+sept_seg_select = [
+    Pin(22, Pin.OUT),  # Broche pour sélectionner le premier afficheur
+    Pin(21, Pin.OUT),  # Broche pour sélectionner le deuxième afficheur
+    Pin(20, Pin.OUT)   # Broche pour sélectionner le troisième afficheur
 ]
 
-def display_number(number):
-    # Afficher le chiffre sur les afficheurs à 7 segments
-    for pin, state in zip(sept_seg, BCD_mapping[number]):
+# Tableau de correspondance des chiffres en BCD pour les afficheurs à 7 segments
+decodeur_mapping = [
+    [1, 1, 1, 1, 1, 1, 0],   # 0
+    [0, 1, 1, 0, 0, 0, 0],   # 1
+    [1, 1, 0, 1, 1, 0, 1],   # 2
+    [1, 1, 1, 1, 0, 0, 1],   # 3
+    [0, 1, 1, 0, 0, 1, 1],   # 4
+    [1, 0, 1, 1, 0, 1, 1],   # 5
+    [1, 0, 1, 1, 1, 1, 1],   # 6
+    [1, 1, 1, 0, 0, 0, 0],   # 7
+    [1, 1, 1, 1, 1, 1, 1],   # 8
+    [1, 1, 1, 1, 0, 1, 1]    # 9
+]
+
+def affichage(segments):
+    # Afficher le chiffre spécifié sur les afficheurs à 7 segments
+    for pin, state in zip(sept_seg_select, segments):
         pin.value(state)
 
-def timer(seconds):
-    while seconds >= 0:
-        # Affichage des secondes restantes sur les afficheurs à 7 segments
-        display_number(seconds % 10)  # Affiche les unités des secondes
-        time.sleep(1)  # Attente d'une seconde
-        seconds -= 1
+def décompte():
+    for minute in range(3, -1, -1):  
+        for second in range(59, -1, -1):  
+            for unity in range(60):
+                for i in range(3):
+                    # Sélectionner l'afficheur à activer
+                    sept_seg_select[i].value(1)
+                    
+                    # Afficher le chiffre sur l'afficheur sélectionné
+                    affichage(decodeur_mapping[minute // 10 if i == 0 else 
+                                                minute % 10 if i == 1 else 
+                                                second // 10 if i == 2 else 
+                                                second % 10])
+                    
+                    # Désélectionner l'afficheur pour le prochain tour de boucle
+                    sept_seg_select[i].value(0) 
+                    
+                    # Attendre un court instant pour l'animation
+                    time.sleep(0.005) 
+    
+    # Fin du compte à rebours
+    print("Décompte terminé !")
 
-# Exemple d'utilisation : minuterie de 180 secondes (3 minutes)
-try:
-    timer(180)  # Démarrer la minuterie pour 180 secondes (3 minutes)
-finally:
-    # Éteindre les afficheurs à la fin de la minuterie
-    display_number(0)  # Affiche "0" sur les afficheurs
+# Exécution de la fonction de décompte
+décompte()
