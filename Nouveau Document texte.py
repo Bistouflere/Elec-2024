@@ -1,3 +1,4 @@
+
 from machine import Pin
 import time
 
@@ -48,21 +49,20 @@ def afficher_chiffre(chiffre):
 while True:
     motion_detected = pir.value()
     led.value(0)
-    # Si un mouvement est détecté, imprimer un message
-    if motion_detected:
-        led.toggle()
 
-        sept_seg[0].value(1)
-        afficher_chiffre(1)
+    led.toggle()
+    time.sleep(1)  # Délai d'une seconde entre chaque chiffre affiché
+    
+    sept_seg[0].value(1)
+    afficher_chiffre(1)
+    time.sleep(1)  
+    
+    sept_seg[1].value(1)
+    afficher_chiffre(8)
+    time.sleep(1)
+
+    sept_seg[2].value(1)
+    afficher_chiffre(0)
+    time.sleep(1)  
         
-        sept_seg[1].value(1)
-        afficher_chiffre(8)
-
-        sept_seg[2].value(1)
-        afficher_chiffre(0)
-
-        time.sleep(10)
-
-        led.value(0)
-        time.sleep(1)
-  
+    led.value(0)  
