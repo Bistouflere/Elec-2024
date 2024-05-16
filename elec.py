@@ -10,16 +10,16 @@ sept_seg_select = [
 
 # Tableau de correspondance des chiffres en BCD pour les afficheurs à 7 segments
 decodeur_mapping = [
-    [1, 1, 1, 1, 1, 1, 0],   # 0
-    [0, 1, 1, 0, 0, 0, 0],   # 1
-    [1, 1, 0, 1, 1, 0, 1],   # 2
-    [1, 1, 1, 1, 0, 0, 1],   # 3
-    [0, 1, 1, 0, 0, 1, 1],   # 4
-    [1, 0, 1, 1, 0, 1, 1],   # 5
-    [1, 0, 1, 1, 1, 1, 1],   # 6
-    [1, 1, 1, 0, 0, 0, 0],   # 7
-    [1, 1, 1, 1, 1, 1, 1],   # 8
-    [1, 1, 1, 1, 0, 1, 1]    # 9
+    (0, 0, 0, 0),  # 0
+    (0, 0, 0, 1),  # 1
+    (0, 0, 1, 0),  # 2
+    (0, 0, 1, 1),  # 3
+    (0, 1, 0, 0),  # 4
+    (0, 1, 0, 1),  # 5
+    (0, 1, 1, 0),  # 6
+    (0, 1, 1, 1),  # 7
+    (1, 0, 0, 0),  # 8
+    (1, 0, 0, 1)   # 9
 ]
 
 def affichage(segments):
@@ -30,7 +30,7 @@ def affichage(segments):
 def décompte():
     for minute in range(3, -1, -1):  
         for second in range(59, -1, -1):  
-            for unity in range(60):
+            for unity in range(10, -1, -1):
                 for i in range(3):
                     # Sélectionner l'afficheur à activer
                     sept_seg_select[i].value(1)
