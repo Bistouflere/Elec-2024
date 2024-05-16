@@ -1,5 +1,22 @@
 from machine import Pin
 import time
+import network
+
+
+def connecterWifi(ssid, password):
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    if not wlan.isconnected():
+        print('Connexion au WiFi...')
+        wlan.connect(ssid, password)
+        while not wlan.isconnected():
+            pass
+    print('Connecté au réseau WiFi:', wlan.ifconfig())
+
+
+def run_server():
+    connecter_wifi("nom_du_reseau", "mot_de_passe")
+
 
 # Définition des broches pour le décodeur BCD
 A = Pin(17, Pin.OUT)
